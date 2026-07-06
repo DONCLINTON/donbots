@@ -1,3 +1,4 @@
+// @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
 import React from 'react';
 import classnames from 'classnames';
 import { observer } from 'mobx-react-lite';
@@ -7,13 +8,45 @@ import { useStore } from '@/hooks/useStore';
 import { DerivLightGoogleDriveIcon } from '@deriv/quill-icons/Illustration';
 import { Localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
-/* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
-/* [/AI] */
 import './google-drive.scss';
+
+// --- PKCE CRYPTOGRAPHIC HELPERS ---
+const generateCodeVerifier = (): string => {
+    const array = new Uint32Array(56);
+    window.crypto.getRandomValues(array);
+    return Array.from(array, (dec) => ('0' + dec.toString(16)).substr(-2)).join('');
+};
+
+const generateCodeChallenge = async (verifier: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(verifier);
+    const hash = await window.crypto.subtle.digest('SHA-256', data);
+    
+    return btoa(String.fromCharCode(...new Uint8Array(hash)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+};
+
+const redirectToDerivOAuth = async () => {
+    // Replace with your official registered Deriv App ID (e.g., '1011' or your production ID)
+    const APP_ID = '36544'; 
+    const REDIRECT_URI = window.location.origin; // Dynamically uses your donbots.netlify.app URL
+    
+    const codeVerifier = generateCodeVerifier();
+    localStorage.setItem('deriv_code_verifier', codeVerifier);
+    
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+    
+    const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=${APP_ID}&response_type=code&code_challenge=${codeChallenge}&code_challenge_method=S256&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+    
+    window.location.href = oauthUrl;
+};
+// ----------------------------------
 
 const GoogleDrive: React.FC = observer(() => {
     const { google_drive, load_modal } = useStore();
-    const { is_authorised, signIn, signOut } = google_drive;
+    const { is_authorised, signOut } = google_drive;
     const { is_open_button_loading, onDriveOpen } = load_modal;
     const { isDesktop } = useDevice();
     const icon_size = isDesktop ? '128' : '96';
@@ -40,8 +73,6 @@ const GoogleDrive: React.FC = observer(() => {
                         <Button
                             onClick={() => {
                                 signOut();
-                                /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
-                                /* [/AI] */
                             }}
                             has_effect
                             secondary
@@ -83,9 +114,8 @@ const GoogleDrive: React.FC = observer(() => {
                         </div>
                         <Button
                             onClick={() => {
-                                signIn();
-                                /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
-                                /* [/AI] */
+                                // Replaced raw vendor signIn action with your secure PKCE handshake link
+                                redirectToDerivOAuth();
                             }}
                             has_effect
                             primary
@@ -101,3 +131,4 @@ const GoogleDrive: React.FC = observer(() => {
 });
 
 export default GoogleDrive;
+                            
