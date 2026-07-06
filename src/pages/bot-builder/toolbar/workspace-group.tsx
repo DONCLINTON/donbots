@@ -61,8 +61,8 @@ const WorkspaceGroup = observer(() => {
                 />
                 
                 {/* 
-                  [CUSTOM UPGRADE] Added direct WhatsApp entry point 
-                  to connect with followers instead of letting them download the XML 
+                  [CUSTOM IMAGE BRANDING] Displaying the uploaded green WhatsApp icon 
+                  rendered cleanly within the workspace dashboard action sequence.
                 */}
                 <ToolbarIcon
                     popover_message={localize('Contact Developer')}
@@ -73,12 +73,23 @@ const WorkspaceGroup = observer(() => {
                             rel="noopener noreferrer"
                             className='toolbar__icon'
                             id='db-toolbar__whatsapp-button'
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
+                            style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                textDecoration: 'none' 
+                            }}
                         >
-                            {/* Using a clean, inline generic chat bubble SVG that fits the toolbar design perfectly */}
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 2C6.477 2 2 6.477 2 12c0 1.821.487 3.53 1.338 5L2 22l5.161-1.312A9.957 9.957 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm1 .35c4.683.473 8.327 4.117 8.8 8.8-.52 4.542-4.117 8.14-8.66 8.65a8.7 8.7 0 01-4.04-.79l-.3-.18-3 1 .76-2.91-.2-.31A8.7 8.7 0 0113 2.35z" fill="currentColor"/>
-                            </svg>
+                            <img 
+                                src="/images.jpeg" 
+                                alt="WhatsApp Support" 
+                                style={{ 
+                                    width: '20px', 
+                                    height: '20px', 
+                                    borderRadius: '4px',
+                                    objectFit: 'contain'
+                                }} 
+                            />
                         </a>
                     }
                 />
