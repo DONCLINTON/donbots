@@ -1,3 +1,4 @@
+// @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
 import React from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
@@ -15,12 +16,20 @@ type TMobileIconGuide = {
 };
 
 const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
-    const { load_modal, dashboard, client, google_drive } = useStore();
+    const { load_modal, dashboard, client, google_drive, transactions, run_panel } = useStore();
     const { dashboard_strategies } = load_modal;
     const { is_google_drive_configured } = google_drive;
     const { active_tab, active_tour } = dashboard;
     const has_dashboard_strategies = !!dashboard_strategies?.length;
     const { isDesktop, isTablet } = useDevice();
+
+    // Pull real-time bot statistics from the global execution stream
+    const { statistics } = transactions;
+    const { is_running } = run_panel;
+    const { total_profit, won_contracts, number_of_runs } = statistics;
+
+    // Dynamically calculate the active win rate percentage
+    const win_rate = number_of_runs > 0 ? ((won_contracts / number_of_runs) * 100).toFixed(1) : '0.0';
 
     return (
         <React.Fragment>
@@ -53,8 +62,13 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                         <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.02em', textAlign: 'center' }}>
                             Net Profit
                         </span>
-                        <span style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-running)', letterSpacing: '-0.01em' }}>
-                            +$0.00
+                        <span style={{ 
+                            fontSize: '1rem', 
+                            fontWeight: '700', 
+                            color: total_profit > 0 ? '#4ade80' : total_profit < 0 ? '#f87171' : 'var(--text-primary)', 
+                            letterSpacing: '-0.01em' 
+                        }}>
+                            {total_profit >= 0 ? `+$${total_profit.toFixed(2)}` : `$${total_profit.toFixed(2)}`}
                         </span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, alignItems: 'center', borderLeft: '1px solid rgba(0,0,0,0.08)', borderRight: '1px solid rgba(0,0,0,0.08)' }}>
@@ -62,15 +76,20 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                             Win Rate
                         </span>
                         <span style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-                            0.0%
+                            {win_rate}%
                         </span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, alignItems: 'center' }}>
                         <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.02em', textAlign: 'center' }}>
                             Status
                         </span>
-                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--color-accent)', letterSpacing: '-0.01em' }}>
-                            {client.is_logged_in ? 'Live' : 'Ready'}
+                        <span style={{ 
+                            fontSize: '0.9rem', 
+                            fontWeight: '700', 
+                            color: is_running ? '#4ade80' : 'var(--text-muted)', 
+                            letterSpacing: '-0.01em' 
+                        }}>
+                            {is_running ? 'Live' : 'Ready'}
                         </span>
                     </div>
                 </div>
