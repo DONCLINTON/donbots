@@ -1,185 +1,210 @@
 // @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
-import React from 'react';
-import classNames from 'classnames';
+import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import GoogleDrive from '@/components/load-modal/google-drive';
-import Dialog from '@/components/shared_ui/dialog';
-import MobileFullPageModal from '@/components/shared_ui/mobile-full-page-modal';
-import Text from '@/components/shared_ui/text';
-import { DBOT_TABS } from '@/constants/bot-contents';
+import { tabs_title } from '@/constants/load-modal';
 import { useStore } from '@/hooks/useStore';
-import {
-    DerivLightBotBuilderIcon,
-    DerivLightGoogleDriveIcon,
-    DerivLightLocalDeviceIcon,
-    DerivLightMyComputerIcon,
-    DerivLightQuickStrategyIcon,
-} from '@deriv/quill-icons/Illustration';
-import { Localize, localize } from '@deriv-com/translations';
+import { localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
-import DashboardBotList from './bot-list/dashboard-bot-list';
+import MobileFullPageModal from '../shared_ui/mobile-full-page-modal';
+import Modal from '../shared_ui/modal';
+import Tabs from '../shared_ui/tabs';
+import GoogleDrive from './google-drive';
+import Local from './local';
+import LocalFooter from './local-footer';
+import Recent from './recent';
+import RecentFooter from './recent-footer';
 
-type TCardProps = {
-    has_dashboard_strategies: boolean;
-    is_mobile: boolean;
-};
-
-type TCardArray = {
+interface Strategy {
     id: string;
-    icon: React.ReactElement;
-    content: React.ReactElement;
-    callback: () => void;
-};
+    name: string;
+    description: string;
+    market: string;
+    trade_type: string;
+    win_rate_tag: string;
+    xml_url: string;
+}
 
-const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => {
-    const { dashboard, load_modal, quick_strategy, google_drive } = useStore();
-    const { toggleLoadModal, setActiveTabIndex } = load_modal;
+const LoadModal: React.FC = observer(() => {
+    const { load_modal, dashboard } = useStore();
+    const {
+        active_index,
+        is_load_modal_open,
+        loaded_local_file,
+        onEntered,
+        recent_strategies,
+        setActiveTabIndex,
+        toggleLoadModal,
+        tab_name,
+    } = load_modal;
+    const { setPreviewOnPopup } = dashboard;
     const { isDesktop } = useDevice();
-    const { onCloseDialog, dialog_options, is_dialog_open, setActiveTab, setPreviewOnPopup } = dashboard;
-    const { setFormVisibility } = quick_strategy;
+    const header_text = localize('Load strategy');
 
-    const openFileLoader = () => {
-        toggleLoadModal();
-        setActiveTabIndex(is_mobile ? 0 : 1);
-        setActiveTab(DBOT_TABS.BOT_BUILDER);
+    // Cloud Hosted Strategies State
+    const [strategies, setStrategies] = useState<Strategy[]>([]);
+    const [loadingCloud, setLoadingCloud] = useState(true);
+
+    useEffect(() => {
+        if (is_load_modal_open) {
+            setLoadingCloud(true);
+            fetch('https://raw.githubusercontent.com/DONCLINTON/Trading-Bots/main/manifest.json')
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data && data.strategies) setStrategies(data.strategies);
+                    setLoadingCloud(false);
+                })
+                .catch((err) => {
+                    console.error('Error fetching cloud manifest:', err);
+                    setLoadingCloud(false);
+                });
+        }
+    }, [is_load_modal_open]);
+
+    const handleTabItemClick = (active_index: number) => {
+        setActiveTabIndex(active_index);
     };
 
-    const openGoogleDriveDialog = () => {
-        const google_drive_tab_index = isDesktop ? 2 : 1;
-        toggleLoadModal();
-        setActiveTabIndex(google_drive_tab_index);
-        setActiveTab(DBOT_TABS.BOT_BUILDER);
+    const handleSelectCloudBot = async (url: string) => {
+        try {
+            const response = await fetch(url);
+            const xmlText = await response.text();
+            // TODO: Pass xmlText to Phase 3 XML Parser / Execution loop
+            console.log('Downloaded XML content successfully:', xmlText.substring(0, 200));
+            toggleLoadModal();
+            alert('Cloud strategy loaded successfully into memory!');
+        } catch (error) {
+            console.error('Failed downloading strategy XML:', error);
+        }
     };
 
-    const actions: TCardArray[] = [
-        {
-            id: 'my-computer',
-            icon: is_mobile ? (
-                <DerivLightLocalDeviceIcon height='40px' width='40px' />
+    const renderCloudStrategies = () => (
+        <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {loadingCloud ? (
+                <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>Loading automated strategies...</div>
+            ) : strategies.length === 0 ? (
+                <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>No automated bots found.</div>
             ) : (
-                <DerivLightMyComputerIcon height='40px' width='40px' />
-            ),
-            content: is_mobile ? <Localize i18n_default_text='Local' /> : <Localize i18n_default_text='My computer' />,
-            callback: () => {
-                openFileLoader();
-            },
-        },
-        {
-            id: 'google-drive',
-            icon: <DerivLightGoogleDriveIcon height='40px' width='40px' />,
-            content: <Localize i18n_default_text='Google Drive' />,
-            callback: () => {
-                openGoogleDriveDialog();
-            },
-        },
-        {
-            id: 'bot-builder',
-            icon: <DerivLightBotBuilderIcon height='40px' width='40px' />,
-            content: <Localize i18n_default_text='Bot Builder' />,
-            callback: () => {
-                setActiveTab(DBOT_TABS.BOT_BUILDER);
-            },
-        },
-        {
-            id: 'quick-strategy',
-            icon: <DerivLightQuickStrategyIcon height='40px' width='40px' />,
-            content: <Localize i18n_default_text='Quick strategy' />,
-            callback: () => {
-                setActiveTab(DBOT_TABS.BOT_BUILDER);
-                setFormVisibility(true);
-            },
-        },
-    ]; // Forced removal of the environmental .filter toggle to keep Google Drive always accessible
+                strategies.map((bot) => (
+                    <div 
+                        key={bot.id} 
+                        onClick={() => handleSelectCloudBot(bot.xml_url)}
+                        style={{
+                            background: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: '8px',
+                            padding: '14px',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            zIndex: 10005
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginBottom: '6px' }}>
+                            <h4 style={{ color: '#fff', margin: 0, fontSize: '15px', fontWeight: '600' }}>{bot.name}</h4>
+                            <span style={{
+                                background: 'var(--color-accent)',
+                                color: '#fff',
+                                fontSize: '10px',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                marginLeft: 'auto'
+                            }}>{bot.win_rate_tag}</span>
+                        </div>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: '0 0 8px 0', lineHeight: '1.4' }}>{bot.description}</p>
+                        <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                            <span style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>📊 {bot.market}</span>
+                            <span style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>⚙️ {bot.trade_type}</span>
+                        </div>
+                    </div>
+                ))
+            )}
+        </div>
+    );
 
-    return React.useMemo(
-        () => (
-            <div
-                className={classNames('tab__dashboard__table', {
-                    'tab__dashboard__table--minimized': has_dashboard_strategies && is_mobile,
-                })}
-                style={{ width: '100%', marginTop: '16px' }}
+    if (!isDesktop) {
+        return (
+            <MobileFullPageModal
+                is_modal_open={is_load_modal_open}
+                className='load-strategy__wrapper'
+                header={header_text}
+                onClickClose={() => {
+                    setPreviewOnPopup(false);
+                    toggleLoadModal();
+                }}
+                height_offset='80px'
+                page_overlay
             >
-                {/* Horizontal responsive tile arrangement styled for fintech theme */}
-                <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(4, 1fr)',
-                        gap: '8px',
-                        width: '100%',
-                        marginBottom: '24px',
-                        boxSizing: 'border-box'
-                    }}
-                    id='tab__dashboard__table__tiles'
-                >
-                    {actions.map(icons => {
-                        const { icon, content, callback, id } = icons;
-                        return (
-                            <div
-                                key={id}
-                                className='premium-glass-card'
-                                onClick={callback}
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    padding: '12px 4px',
-                                    cursor: 'pointer',
-                                    textAlign: 'center'
-                                }}
-                            >
-                                <div 
-                                    style={{ 
-                                        marginBottom: '6px', 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        justifyContent: 'center',
-                                        opacity: id === 'google-drive' ? 0.9 : 1
-                                    }}
-                                >
-                                    {icon}
-                                </div>
-                                <span style={{ fontSize: '0.65rem', fontWeight: '500', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                                    {content}
-                                </span>
-                            </div>
-                        );
-                    })}
+                <style>{`
+                    .load-strategy__wrapper, .dc-mobile-full-page-modal, .dc-mobile-full-page-modal__body, .dc-tabs {
+                        background: #15171F !important;
+                        color: var(--text-primary) !important;
+                        z-index: 9999 !important;
+                    }
+                    .dc-tabs__item { color: var(--text-secondary) !important; }
+                    .dc-tabs__item--active { color: var(--text-primary) !important; border-bottom-color: var(--color-accent) !important; }
+                `}</style>
 
-                    {!isDesktop ? (
-                        <Dialog
-                            title={dialog_options.title}
-                            is_visible={is_dialog_open}
-                            onCancel={onCloseDialog}
-                            is_mobile_full_width
-                            className='dc-dialog__wrapper--google-drive'
-                            has_close_icon
-                        >
+                <Tabs active_index={active_index} onTabItemClick={handleTabItemClick} top>
+                    <div label={localize('Local')}>
+                        <Local />
+                    </div>
+                    <div label='Automated Bots'>
+                        {renderCloudStrategies()}
+                    </div>
+                    <div label='Google Drive'>
+                        <div style={{ position: 'relative', zIndex: 10000, background: '#15171F', padding: '16px' }}>
                             <GoogleDrive />
-                        </Dialog>
-                    ) : (
-                        <MobileFullPageModal
-                            is_modal_open={is_dialog_open}
-                            className='load-strategy__wrapper'
-                            header={localize('Load strategy')}
-                            onClickClose={() => {
-                                setPreviewOnPopup(false);
-                                onCloseDialog();
-                            }}
-                            height_offset='80px'
-                        >
-                            <div label='Google Drive' className='google-drive-label'>
-                                <GoogleDrive />
-                            </div>
-                        </MobileFullPageModal>
-                    )}
-                </div>
-                <DashboardBotList />
-            </div>
-        ),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [is_dialog_open, has_dashboard_strategies, actions]
+                        </div>
+                    </div>
+                </Tabs>
+            </MobileFullPageModal>
+        );
+    }
+
+    const is_file_loaded = !!loaded_local_file && tab_name === tabs_title.TAB_LOCAL;
+    const has_recent_strategies = recent_strategies.length > 0 && tab_name === tabs_title.TAB_RECENT;
+
+    return (
+        <Modal
+            title={header_text}
+            className='load-strategy'
+            width='1000px'
+            height='80vh'
+            is_open={is_load_modal_open}
+            toggleModal={() => toggleLoadModal()}
+            onEntered={onEntered}
+            elements_to_ignore={[document.querySelector('.injectionDiv')]}
+        >
+            <style>{`
+                .load-strategy .dc-modal-dialog, .load-strategy .dc-modal-body, .load-strategy .dc-modal-footer {
+                    background: var(--bg-surface) !important;
+                    color: var(--text-primary) !important;
+                    border-color: rgba(255,255,255,0.05) !important;
+                }
+            `}</style>
+            <Modal.Body>
+                <Tabs active_index={active_index} onTabItemClick={handleTabItemClick} top header_fit_content>
+                    <div label={localize('Recent')}>
+                        <Recent />
+                    </div>
+                    <div label={localize('Local')}>
+                        <Local />
+                    </div>
+                    <div label='Automated Bots'>
+                        {renderCloudStrategies()}
+                    </div>
+                    <div label='Google Drive'>
+                        <GoogleDrive />
+                    </div>
+                </Tabs>
+            </Modal.Body>
+            {has_recent_strategies && (
+                <Modal.Footer has_separator><RecentFooter /></Modal.Footer>
+            )}
+            {is_file_loaded && (
+                <Modal.Footer has_separator><LocalFooter /></Modal.Footer>
+            )}
+        </Modal>
     );
 });
 
-export default Cards;
+export default LoadModal;
