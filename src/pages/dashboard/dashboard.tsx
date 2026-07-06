@@ -28,7 +28,48 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                 className={classNames('tab__dashboard', {
                     'tab__dashboard--tour-active': active_tour,
                 })}
+                style={{ backgroundColor: 'var(--bg-main)', minHeight: '100vh', padding: isDesktop ? '24px' : '12px' }}
             >
+                {/* PREMIUM FINTECH LIVE METRICS BANNER */}
+                <div 
+                    className='premium-glass-card' 
+                    style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: isDesktop ? 'repeat(3, 1fr)' : '1fr', 
+                        gap: '16px', 
+                        padding: '20px', 
+                        marginBottom: '24px' 
+                    }}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Net Profit PnL
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className='pulse-dot running'></span>
+                            <span style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--color-running)', letterSpacing: '-0.03em' }}>
+                                +$0.00
+                            </span>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: isDesktop ? '1px solid rgba(255,255,255,0.08)' : 'none', paddingLeft: isDesktop ? '24px' : '0' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Win Rate
+                        </span>
+                        <span style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+                            0.0%
+                        </span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: isDesktop ? '1px solid rgba(255,255,255,0.08)' : 'none', paddingLeft: isDesktop ? '24px' : '0' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Active Balance
+                        </span>
+                        <span style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--color-accent)', letterSpacing: '-0.03em' }}>
+                            {client.is_logged_in ? 'Connected' : 'Offline'}
+                        </span>
+                    </div>
+                </div>
+
                 <div className='tab__dashboard__content'>
                     {client.is_logged_in && (
                         <Announcements is_mobile={!isDesktop} is_tablet={isTablet} handleTabChange={handleTabChange} />
@@ -38,26 +79,14 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                             className={classNames('tab__dashboard__header', {
                                 'tab__dashboard__header--listed': isDesktop && has_dashboard_strategies,
                             })}
+                            style={{ marginBottom: '16px' }}
                         >
                             {!has_dashboard_strategies && (
-                                <Text
-                                    className='title'
-                                    as='h2'
-                                    color='prominent'
-                                    size={isDesktop ? 'sm' : 's'}
-                                    lineHeight='xxl'
-                                    weight='bold'
-                                >
+                                <h2 style={{ fontSize: isDesktop ? '1.5rem' : '1.25rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>
                                     {localize('Load or build your bot')}
-                                </Text>
+                               </h2>
                             )}
-                            <Text
-                                as='p'
-                                color='prominent'
-                                lineHeight='s'
-                                size={isDesktop ? 's' : 'xxs'}
-                                className={classNames('subtitle', { 'subtitle__has-list': has_dashboard_strategies })}
-                            >
+                            <p style={{ fontSize: isDesktop ? '0.9rem' : '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
                                 {is_google_drive_configured
                                     ? localize(
                                           'Import a bot from your computer or Google Drive, build it from scratch, or start with a quick strategy.'
@@ -65,7 +94,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                     : localize(
                                           'Import a bot from your computer, build it from scratch, or start with a quick strategy.'
                                       )}
-                            </Text>
+                            </p>
                         </div>
                         <Cards has_dashboard_strategies={has_dashboard_strategies} is_mobile={!isDesktop} />
                     </div>
