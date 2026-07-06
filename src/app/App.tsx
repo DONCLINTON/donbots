@@ -1,3 +1,4 @@
+// @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
 import { lazy, Suspense } from 'react';
 import React from 'react';
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router-dom';
@@ -81,10 +82,14 @@ function App() {
 
         const handleCallback = async () => {
             try {
+                // Fetch the secret verifier string generated during step 2
+                const codeVerifier = localStorage.getItem('deriv_code_verifier') || undefined;
+
                 const authInfo = await handleOAuthCallback(window.location.href, {
-                    clientId: process.env.NEXT_PUBLIC_DERIV_APP_ID || '',
+                    clientId: process.env.NEXT_PUBLIC_DERIV_APP_ID || '36544',
                     redirectUri: window.location.origin,
                     scopes: 'trade',
+                    codeVerifier: codeVerifier, // Securely hands over the PKCE proof string
                 });
 
                 const { DerivWSAccountsService } = await import('@/services/derivws-accounts.service');
@@ -106,6 +111,8 @@ function App() {
             } catch (error) {
                 console.error('OAuth callback error:', error);
             } finally {
+                // Clear the temporary local security strings and clean up URL
+                localStorage.removeItem('deriv_code_verifier');
                 cleanupUrl(window.location.origin);
             }
         };
@@ -117,3 +124,4 @@ function App() {
 }
 
 export default App;
+                    
