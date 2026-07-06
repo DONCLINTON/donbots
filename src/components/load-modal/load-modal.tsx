@@ -47,11 +47,20 @@ const LoadModal: React.FC = observer(() => {
                 height_offset='80px'
                 page_overlay
             >
-                {/* Fintech Premium Theme Injector for Mobile Popups */}
+                {/* Fixed CSS Isolation Rules for Mobile Viewports */}
                 <style>{`
-                    .load-strategy__wrapper, .dc-mobile-full-page-modal, .dc-tabs {
-                        background: var(--bg-main) !important;
+                    .load-strategy__wrapper, 
+                    .dc-mobile-full-page-modal, 
+                    .dc-mobile-full-page-modal__body,
+                    .dc-tabs {
+                        background: #15171F !important; /* Fixed solid dark background to isolate workspace bleed */
                         color: var(--text-primary) !important;
+                        z-index: 9999 !important; /* Force layout above structural workspace canvas elements */
+                    }
+                    .google-drive-label, .google-drive__container {
+                        background: #15171F !important;
+                        position: relative;
+                        z-index: 10000 !important;
                     }
                     .dc-tabs__item {
                         color: var(--text-secondary) !important;
@@ -60,15 +69,24 @@ const LoadModal: React.FC = observer(() => {
                         color: var(--text-primary) !important;
                         border-bottom-color: var(--color-accent) !important;
                     }
+                    /* Ensure all internal elements within Google Drive subcomponents do not draw transparency masks */
+                    .load-strategy__wrapper div {
+                        background-color: transparent;
+                    }
+                    .load-strategy__wrapper button, 
+                    .load-strategy__wrapper .dc-btn {
+                        z-index: 10001 !important; /* Push buttons above layout bounds */
+                    }
                 `}</style>
 
                 <Tabs active_index={active_index} onTabItemClick={handleTabItemClick} top>
                     <div label={localize('Local')}>
                         <Local />
                     </div>
-                    {/* Bypassed condition to force Google Drive container rendering */}
                     <div label='Google Drive'>
-                        <GoogleDrive />
+                        <div style={{ position: 'relative', zIndex: 10000, background: '#15171F', padding: '16px' }}>
+                            <GoogleDrive />
+                        </div>
                     </div>
                 </Tabs>
             </MobileFullPageModal>
