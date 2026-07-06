@@ -78,43 +78,92 @@ export const StatisticsSummary = ({
     toggleStatisticsInfoModal,
     total_profit,
     won_contracts,
-}: TStatisticsSummary) => (
-    <div
-        className={classNames('run-panel__stat', {
-            'run-panel__stat--mobile': is_mobile,
-        })}
-    >
-        <div className='run-panel__stat--info' onClick={toggleStatisticsInfoModal}>
-            <div className='run-panel__stat--info-item'>
-                <Localize i18n_default_text="What's this?" />
+}: TStatisticsSummary) => {
+    const [rate, setRate] = React.useState(3750); // Fallback standard baseline exchange rate
+
+    // Fetch live market conversion rate for UGX dynamically
+    React.useEffect(() => {
+        fetch('https://open.er-api.com/v6/latest/USD')
+            .then(res => res.json())
+            .then(data => {
+                if (data?.rates?.UGX) {
+                    setRate(Math.round(data.rates.UGX));
+                }
+            })
+            .catch(() => console.log("Using baseline local rate conversion"));
+    }, []);
+
+    const formatUGX = (usdAmount: number) => {
+        const value = Math.round(usdAmount * rate);
+        return new Intl.NumberFormat('en-UG', { style: 'currency', currency: 'UGX', maximumFractionDigits: 0 }).format(value);
+    };
+
+    return (
+        <div
+            className={classNames('run-panel__stat', {
+                'run-panel__stat--mobile': is_mobile,
+            })}
+        >
+            <div className='run-panel__stat--info' onClick={toggleStatisticsInfoModal}>
+                <div className='run-panel__stat--info-item'>
+                    <Localize i18n_default_text="What's this?" />
+                </div>
+            </div>
+
+            {/* LIVE UGX ESTIMATION CALCULATOR WIDGET */}
+            <div style={{
+                margin: '8px 16px 12px 16px',
+                padding: '12px',
+                background: 'rgba(74, 222, 128, 0.08)',
+                border: '1px solid rgba(74, 222, 128, 0.3)',
+                borderRadius: '8px',
+                fontSize: '12px'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: 'var(--text-general)' }}>
+                    <span style={{ fontWeight: 'bold' }}>UGX Conversion Live Panel</span>
+                    <span style={{ fontSize: '10px', color: '#4ade80', fontWeight: 'bold' }}>1 USD = {rate} UGX</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px dashed rgba(74, 222, 128, 0.2)', paddingTop: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Stake Value:</span>
+                        <span style={{ fontWeight: '600' }}>{formatUGX(total_stake)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Net Return:</span>
+                        <span style={{ fontWeight: '600', color: total_profit >= 0 ? '#4ade80' : '#f87171' }}>
+                            {formatUGX(total_profit)}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div className='run-panel__stat--tiles'>
+                <StatisticsTile
+                    title={localize('Total stake')}
+                    alignment='top'
+                    content={<Money amount={total_stake} currency={currency} show_currency />}
+                />
+                <StatisticsTile
+                    title={localize('Total payout')}
+                    alignment='top'
+                    content={<Money amount={total_payout} currency={currency} show_currency />}
+                />
+                <StatisticsTile title={localize('No. of runs')} alignment='top' content={number_of_runs} />
+                <StatisticsTile title={localize('Contracts lost')} alignment='bottom' content={lost_contracts} />
+                <StatisticsTile title={localize('Contracts won')} alignment='bottom' content={won_contracts} />
+                <StatisticsTile
+                    title={localize('Total profit/loss')}
+                    content={<Money amount={total_profit} currency={currency} has_sign show_currency />}
+                    alignment='bottom'
+                    contentClassName={classNames('run-panel__stat-amount', {
+                        'run-panel__stat-amount--positive': total_profit > 0,
+                        'run-panel__stat-amount--negative': total_profit < 0,
+                    })}
+                />
             </div>
         </div>
-        <div className='run-panel__stat--tiles'>
-            <StatisticsTile
-                title={localize('Total stake')}
-                alignment='top'
-                content={<Money amount={total_stake} currency={currency} show_currency />}
-            />
-            <StatisticsTile
-                title={localize('Total payout')}
-                alignment='top'
-                content={<Money amount={total_payout} currency={currency} show_currency />}
-            />
-            <StatisticsTile title={localize('No. of runs')} alignment='top' content={number_of_runs} />
-            <StatisticsTile title={localize('Contracts lost')} alignment='bottom' content={lost_contracts} />
-            <StatisticsTile title={localize('Contracts won')} alignment='bottom' content={won_contracts} />
-            <StatisticsTile
-                title={localize('Total profit/loss')}
-                content={<Money amount={total_profit} currency={currency} has_sign show_currency />}
-                alignment='bottom'
-                contentClassName={classNames('run-panel__stat-amount', {
-                    'run-panel__stat-amount--positive': total_profit > 0,
-                    'run-panel__stat-amount--negative': total_profit < 0,
-                })}
-            />
-        </div>
-    </div>
-);
+    );
+};
 
 const DrawerHeader = ({ is_clear_stat_disabled, is_mobile, is_drawer_open, onClearStatClick }: TDrawerHeader) =>
     is_mobile &&
@@ -131,7 +180,6 @@ const DrawerHeader = ({ is_clear_stat_disabled, is_mobile, is_drawer_open, onCle
 
 const DrawerContent = ({ active_index, is_drawer_open, active_tour, setActiveTabIndex, ...props }: TDrawerContent) => {
     const { isDesktop } = useDevice();
-    // Use the useBlockScroll hook to prevent body scrolling when drawer is open on mobile
 
     React.useEffect(() => {
         if (!isDesktop && is_drawer_open) {
@@ -259,7 +307,6 @@ const RunPanel = observer(() => {
         is_clear_stat_disabled,
         onClearStatClick,
         onMount,
-        onRunButtonClick, // eslint-disable-line @typescript-eslint/no-unused-vars
         onUnmount,
         setActiveTabIndex,
         toggleDrawer,
@@ -279,7 +326,6 @@ const RunPanel = observer(() => {
         if (!isDesktop) {
             toggleDrawer(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const content = (
