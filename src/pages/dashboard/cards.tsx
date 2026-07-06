@@ -1,6 +1,4 @@
 // @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
-// TODO: Complete MobX integration for popup functionality
-// Some code is kept commented out pending popup integration
 import React from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
@@ -19,8 +17,6 @@ import {
 } from '@deriv/quill-icons/Illustration';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
-/* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
-/* [/AI] */
 import DashboardBotList from './bot-list/dashboard-bot-list';
 
 type TCardProps = {
@@ -38,7 +34,6 @@ type TCardArray = {
 const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => {
     const { dashboard, load_modal, quick_strategy, google_drive } = useStore();
     const { toggleLoadModal, setActiveTabIndex } = load_modal;
-    const { is_google_drive_configured } = google_drive;
     const { isDesktop } = useDevice();
     const { onCloseDialog, dialog_options, is_dialog_open, setActiveTab, setPreviewOnPopup } = dashboard;
     const { setFormVisibility } = quick_strategy;
@@ -52,7 +47,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
     const openGoogleDriveDialog = () => {
         const google_drive_tab_index = isDesktop ? 2 : 1;
         toggleLoadModal();
-        setActiveTabIndex(google_drive_tab_index); // Google Drive tab index
+        setActiveTabIndex(google_drive_tab_index);
         setActiveTab(DBOT_TABS.BOT_BUILDER);
     };
 
@@ -60,51 +55,41 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
         {
             id: 'my-computer',
             icon: is_mobile ? (
-                <DerivLightLocalDeviceIcon height='48px' width='48px' />
+                <DerivLightLocalDeviceIcon height='40px' width='40px' />
             ) : (
-                <DerivLightMyComputerIcon height='48px' width='48px' />
+                <DerivLightMyComputerIcon height='40px' width='40px' />
             ),
             content: is_mobile ? <Localize i18n_default_text='Local' /> : <Localize i18n_default_text='My computer' />,
             callback: () => {
                 openFileLoader();
-                /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
-                /* [/AI] */
             },
         },
         {
             id: 'google-drive',
-            icon: <DerivLightGoogleDriveIcon height='48px' width='48px' />,
+            icon: <DerivLightGoogleDriveIcon height='40px' width='40px' />,
             content: <Localize i18n_default_text='Google Drive' />,
             callback: () => {
                 openGoogleDriveDialog();
-                /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
-                /* [/AI] */
             },
         },
         {
             id: 'bot-builder',
-            icon: <DerivLightBotBuilderIcon height='48px' width='48px' />,
+            icon: <DerivLightBotBuilderIcon height='40px' width='40px' />,
             content: <Localize i18n_default_text='Bot Builder' />,
             callback: () => {
                 setActiveTab(DBOT_TABS.BOT_BUILDER);
-                /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
-                /* [/AI] */
             },
         },
         {
             id: 'quick-strategy',
-            icon: <DerivLightQuickStrategyIcon height='48px' width='48px' />,
+            icon: <DerivLightQuickStrategyIcon height='40px' width='40px' />,
             content: <Localize i18n_default_text='Quick strategy' />,
             callback: () => {
                 setActiveTab(DBOT_TABS.BOT_BUILDER);
                 setFormVisibility(true);
-                /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
-                /* [/AI] */
             },
         },
-    ]
-        // Hide the Google Drive tile when the feature isn't configured (no GD_* env vars).
-        .filter(action => action.id !== 'google-drive' || is_google_drive_configured);
+    ]; // Forced removal of the environmental .filter toggle to keep Google Drive always accessible
 
     return React.useMemo(
         () => (
@@ -112,11 +97,18 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
                 className={classNames('tab__dashboard__table', {
                     'tab__dashboard__table--minimized': has_dashboard_strategies && is_mobile,
                 })}
+                style={{ width: '100%', marginTop: '16px' }}
             >
+                {/* Horizontal responsive tile arrangement styled for fintech theme */}
                 <div
-                    className={classNames('tab__dashboard__table__tiles', {
-                        'tab__dashboard__table__tiles--minimized': has_dashboard_strategies && is_mobile,
-                    })}
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(4, 1fr)',
+                        gap: '8px',
+                        width: '100%',
+                        marginBottom: '24px',
+                        boxSizing: 'border-box'
+                    }}
                     id='tab__dashboard__table__tiles'
                 >
                     {actions.map(icons => {
@@ -124,27 +116,32 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
                         return (
                             <div
                                 key={id}
-                                className={classNames('tab__dashboard__table__block', {
-                                    'tab__dashboard__table__block--minimized': has_dashboard_strategies && is_mobile,
-                                })}
+                                className='premium-glass-card'
+                                onClick={callback}
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '12px 4px',
+                                    cursor: 'pointer',
+                                    textAlign: 'center'
+                                }}
                             >
-                                <div
-                                    className={classNames('tab__dashboard__table__images', {
-                                        'tab__dashboard__table__images--minimized': has_dashboard_strategies,
-                                    })}
-                                    width='8rem'
-                                    height='8rem'
-                                    icon={icon}
-                                    id={id}
-                                    onClick={() => {
-                                        callback();
+                                <div 
+                                    style={{ 
+                                        marginBottom: '6px', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center',
+                                        opacity: id === 'google-drive' ? 0.9 : 1
                                     }}
                                 >
                                     {icon}
                                 </div>
-                                <Text color='prominent' size={is_mobile ? 'xxs' : 'xs'}>
+                                <span style={{ fontSize: '0.65rem', fontWeight: '500', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                                     {content}
-                                </Text>
+                                </span>
                             </div>
                         );
                     })}
@@ -181,7 +178,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
             </div>
         ),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [is_dialog_open, has_dashboard_strategies, is_google_drive_configured]
+        [is_dialog_open, has_dashboard_strategies, actions]
     );
 });
 
