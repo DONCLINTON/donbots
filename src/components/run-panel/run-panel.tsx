@@ -79,23 +79,22 @@ export const StatisticsSummary = ({
     total_profit,
     won_contracts,
 }: TStatisticsSummary) => {
-    const [rate, setRate] = React.useState(3750); // Fallback standard baseline exchange rate
+    const [rate, setRate] = React.useState(3750);
 
-    // Fetch live market conversion rate for UGX dynamically
     React.useEffect(() => {
         fetch('https://open.er-api.com/v6/latest/USD')
             .then(res => res.json())
             .then(data => {
-                if (data?.rates?.UGX) {
+                if (data && data.rates && data.rates.UGX) {
                     setRate(Math.round(data.rates.UGX));
                 }
             })
-            .catch(() => console.log("Using baseline local rate conversion"));
+            .catch(() => console.log("Using baseline fallback"));
     }, []);
 
     const formatUGX = (usdAmount: number) => {
         const value = Math.round(usdAmount * rate);
-        return new Intl.NumberFormat('en-UG', { style: 'currency', currency: 'UGX', maximumFractionDigits: 0 }).format(value);
+        return `${value.toLocaleString('en-US')} UGX`;
     };
 
     return (
@@ -110,27 +109,19 @@ export const StatisticsSummary = ({
                 </div>
             </div>
 
-            {/* LIVE UGX ESTIMATION CALCULATOR WIDGET */}
-            <div style={{
-                margin: '8px 16px 12px 16px',
-                padding: '12px',
-                background: 'rgba(74, 222, 128, 0.08)',
-                border: '1px solid rgba(74, 222, 128, 0.3)',
-                borderRadius: '8px',
-                fontSize: '12px'
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: 'var(--text-general)' }}>
-                    <span style={{ fontWeight: 'bold' }}>UGX Conversion Live Panel</span>
-                    <span style={{ fontSize: '10px', color: '#4ade80', fontWeight: 'bold' }}>1 USD = {rate} UGX</span>
+            {/* SAFE DOM COMPONENT BOUNDARY FOR UGX ESTIMATES */}
+            <div className='run-panel__tile' style={{ width: '100%', margin: '8px 0', border: '1px solid #4ade80', borderRadius: '4px', padding: '8px' }}>
+                <div className='run-panel__tile-title' style={{ color: '#4ade80', fontWeight: 'bold' }}>
+                    UGX LIVE ESTIMATES (1 USD = {rate} UGX)
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px dashed rgba(74, 222, 128, 0.2)', paddingTop: '6px' }}>
+                <div className='run-panel__tile-content' style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', marginTop: '6px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Stake Value:</span>
-                        <span style={{ fontWeight: '600' }}>{formatUGX(total_stake)}</span>
+                        <span>Stake:</span>
+                        <span style={{ fontWeight: 'bold' }}>{formatUGX(total_stake)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Net Return:</span>
-                        <span style={{ fontWeight: '600', color: total_profit >= 0 ? '#4ade80' : '#f87171' }}>
+                        <span>Profit/Loss:</span>
+                        <span style={{ fontWeight: 'bold', color: total_profit >= 0 ? '#4ade80' : '#f87171' }}>
                             {formatUGX(total_profit)}
                         </span>
                     </div>
