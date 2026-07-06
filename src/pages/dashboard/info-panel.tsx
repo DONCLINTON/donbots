@@ -48,32 +48,49 @@ const InfoPanel = observer(() => {
     }, [is_info_panel_visible]);
 
     const renderInfo = () => (
-        <div className='db-info-panel'>
-            <div data-testid='close-icon' className='db-info-panel__close-action' onClick={handleClose}>
-                <LegacyClose1pxIcon height='18px' width='18px' fill='var(--text-prominent)' />
+        <div 
+            className='db-info-panel' 
+            style={{ 
+                backgroundColor: 'var(--bg-main)', 
+                color: 'var(--text-primary)',
+                padding: '20px',
+                minHeight: '200px'
+            }}
+        >
+            <div 
+                data-testid='close-icon' 
+                className='db-info-panel__close-action' 
+                onClick={handleClose}
+                style={{ position: 'absolute', right: '16px', top: '16px', zIndex: 10, filter: 'invert(1)' }}
+            >
+                <LegacyClose1pxIcon height='18px' width='18px' fill='var(--text-primary)' />
             </div>
 
             {SIDEBAR_INTRO().map(sidebar_item => {
                 const { label, content, link } = sidebar_item;
                 return (
-                    <div key={`${label}-${content}`}>
-                        <Text color='prominent' lineHeight='xxl' size={isDesktop ? 'm' : 's'} weight='bold' as='h1'>
+                    <div key={`${label}-${content}`} style={{ marginBottom: '20px' }}>
+                        <h1 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '12px', letterSpacing: '-0.01em' }}>
                             {label}
-                        </Text>
+                        </h1>
                         {content.map(text => (
-                            <Text
+                            <div
                                 key={`info-panel-tour${text.data}`}
-                                className={classNames('db-info-panel__card', {
+                                className={classNames('db-info-panel__card premium-glass-card', {
                                     'db-info-panel__content': link,
                                 })}
-                                color='prominent'
-                                lineHeight='xl'
-                                as='p'
                                 onClick={() => switchTab(link, label, text.faq_id)}
-                                size={isDesktop ? 's' : 'xxs'}
+                                style={{ 
+                                    padding: '14px', 
+                                    marginBottom: '8px', 
+                                    cursor: 'pointer',
+                                    borderRadius: '8px'
+                                }}
                             >
-                                {text.data}
-                            </Text>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
+                                    {text.data}
+                                </p>
+                            </div>
                         ))}
                     </div>
                 );
@@ -98,6 +115,19 @@ const InfoPanel = observer(() => {
             toggleModal={handleClose}
             width={'440px'}
         >
+            {/* Inject global styling overrides for modal wrapper on mobile inside the document */}
+            <style>{`
+                .statistics__modal--mobile .dc-modal-dialog {
+                    background: var(--bg-main) !important;
+                }
+                .statistics__modal--mobile .dc-modal-body {
+                    background: var(--bg-main) !important;
+                    padding: 0 !important;
+                }
+                .dc-tabs__item--active {
+                    border-bottom-color: var(--color-accent) !important;
+                }
+            `}</style>
             <Modal.Body>{renderInfo()}</Modal.Body>
         </Modal>
     );
